@@ -1,9 +1,10 @@
 package main
 
 import (
-	"command"
 	"fmt"
 	"os"
+
+	"command"
 )
 
 func main() {
@@ -20,6 +21,8 @@ func main() {
 		command.Init()
 	case "build":
 		command.Build()
+	case "push":
+		command.Push()
 	default:
 		fmt.Println("Usage")
 	}

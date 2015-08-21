@@ -3,23 +3,28 @@ package command
 import (
 	"fmt"
 	"github.com/codeskyblue/go-sh"
+	"github.com/tcnksm/go-gitconfig"
+	"os"
+	"utils"
 )
 
-const (
-	DEFAULT_TMPL    = "https://github.com/tyrchen/podgen-basic" // SDF
-	TEMPLATE_PATH   = "template"
-	GH_PAGES        = "gh-pages"
-	TARGET_PATH     = "build"
-	ASSETS_PATH     = "assets"
-	MAX_DESCRIPTION = 96
-	DEFAULT_PORT    = 6060
+var (
+	FILES_TO_CHECK = []string{"channel.yml", "item.yml", "build",
+		ASSETS_PATH, TEMPLATE_PATH}
 )
 
 func Init() {
 	// help init
 	fmt.Println("start init")
-	session := sh.NewSession()
-	session.Command("git", "clone", "--depth=1", DEFAULT_TMPL, TEMPLATE_PATH).Run()
+
+	for _, filename := range FILES_TO_CHECK {
+		if utils.Exists(filename) {
+			fmt.Println("has already inited")
+			os.Exit(-1)
+		}
+	}
+	getTemplate()
+	createGHPages()
 }
 
 func getTemplate() {
@@ -30,15 +35,39 @@ func getTemplate() {
 	gitCommit(session, "master", "git init", true)
 }
 
+func createGHPages() {
+	originUrl := getOriginUrl()
+	session := sh.NewSession()
+	session.Command("git", "branch", "-D", GH_PAGES).Run()
+	session.Command("git", "checkout", "--orphan", GH_PAGES).Run()
+	session.Command("git", "rm", "-rf", ".").Run()
+	session.Command("touch", "index.html").Run()
+
+	gitCommit(session, "gh-pages", "web init", true)
+
+	session.Command("git", "checkout", "master").Run()
+
+	session.Command("git", "clone", "-b", GH_PAGES, originUrl, "build").Run()
+
+	cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+
+}
+
 func rmFiles(session *sh.Session, files ...string) {
 	for _, filename := range files {
-		session.Command("rm", "-rf", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename))
+		session.Command("rm", "-rf", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename)).Run()
 	}
 }
 
 func mvFiles(session *sh.Session, files ...string) {
 	for _, filename := range files {
-		session.Command("mv", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename, "."))
+		session.Command("mv", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename), ".").Run()
+	}
+}
+
+func cpFiles(session *sh.Session, src string, dest string, files ...string) {
+	for _, filename := range files {
+		session.Command("cp", "-r", fmt.Sprintf("%s/%s", src, filename), dest).Run()
 	}
 }
 
@@ -50,4 +79,12 @@ func gitCommit(session *sh.Session, branch string, message string, setUpstream b
 	} else {
 		session.Command("git", "push", "origin", branch).Run()
 	}
+}
+
+func getOriginUrl() string {
+	originUrl, err := gitconfig.OriginURL()
+	if err == nil {
+		return originUrl
+	}
+	return originUrl
 }

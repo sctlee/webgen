@@ -2,10 +2,12 @@ package command
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"utils"
+
 	"github.com/codeskyblue/go-sh"
 	"github.com/tcnksm/go-gitconfig"
-	"os"
-	"utils"
 )
 
 var (
@@ -28,29 +30,37 @@ func Init() {
 }
 
 func getTemplate() {
-	session := sh.NewSession()
-	session.Command("git", "clone", "--depth=1", DEFAULT_TMPL, TEMPLATE_PATH).Run()
-	rmFiles(session, ".git")
-	mvFiles(session, "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
-	gitCommit(session, "master", "git init", true)
+	if runtime.GOOS != "windows" {
+		ls := &LinuxShell{sh.NewSession()}
+		ls.session.Command("git", "clone", "--depth=1", DEFAULT_TMPL, TEMPLATE_PATH).Run()
+		ls.Fmv(TEMPLATE_PATH, ".", "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
+		ls.Frm(TEMPLATE_PATH, ".git")
+		ls.Gmt("master", "git init", true)
+		// rmFiles(session, ".git")
+		// mvFiles(session, "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
+		// gitCommit(session, "master", "git init", true)
+	}
 }
 
 func createGHPages() {
 	originUrl := getOriginUrl()
-	session := sh.NewSession()
-	session.Command("git", "branch", "-D", GH_PAGES).Run()
-	session.Command("git", "checkout", "--orphan", GH_PAGES).Run()
-	session.Command("git", "rm", "-rf", ".").Run()
-	session.Command("touch", "index.html").Run()
+	if runtime.GOOS != "windows" {
+		ls := &LinuxShell{sh.NewSession()}
+		ls.session.Command("git", "branch", "-D", GH_PAGES).Run()
+		ls.session.Command("git", "checkout", "--orphan", GH_PAGES).Run()
+		ls.session.Command("git", "rm", "-rf", ".").Run()
+		ls.session.Command("touch", "index.html").Run()
 
-	gitCommit(session, "gh-pages", "web init", true)
+		ls.Gmt("gh-pages", "web init", true)
+		// gitCommit(session, "gh-pages", "web init", true)
 
-	session.Command("git", "checkout", "master").Run()
+		ls.session.Command("git", "checkout", "master").Run()
 
-	session.Command("git", "clone", "-b", GH_PAGES, originUrl, "build").Run()
+		ls.session.Command("git", "clone", "-b", GH_PAGES, originUrl, "build").Run()
 
-	cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
-
+		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+	}
 }
 
 func rmFiles(session *sh.Session, files ...string) {

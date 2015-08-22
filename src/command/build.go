@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
+	"runtime"
 
 	"github.com/codeskyblue/go-sh"
 )
@@ -47,7 +48,7 @@ func Build() {
 	}
 
 	channel := getChannel("channel.yml")
-	items := getItems("myitems.yml")
+	items := getItems("items.yml")
 
 	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "myindex.tmpl"))
 	check(err)
@@ -64,10 +65,13 @@ func Build() {
 	})
 	check(err)
 
-	session := sh.NewSession()
-	cpFiles(session, ".", TARGET_PATH, "assets")
-	cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
-
+	if runtime.GOOS != "windows" {
+		ls := &LinuxShell{sh.NewSession()}
+		ls.Fcp(".", TARGET_PATH, "assets")
+		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+		// cpFiles(session, ".", TARGET_PATH, "assets")
+		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+	}
 }
 
 func getChannel(path string) (channel Channel) {

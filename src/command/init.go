@@ -58,7 +58,7 @@ func createGHPages() {
 
 		ls.session.Command("git", "clone", "-b", GH_PAGES, originUrl, "build").Run()
 
-		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
 	}
 }

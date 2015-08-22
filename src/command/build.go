@@ -50,7 +50,7 @@ func Build() {
 	channel := getChannel("channel.yml")
 	items := getItems("items.yml")
 
-	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "myindex.tmpl"))
+	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "index.tmpl"))
 	check(err)
 
 	f, err := os.Create(fmt.Sprintf("%s/%s", TARGET_PATH, "index.html"))
@@ -68,7 +68,7 @@ func Build() {
 	if runtime.GOOS != "windows" {
 		ls := &LinuxShell{sh.NewSession()}
 		ls.Fcp(".", TARGET_PATH, "assets")
-		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 		// cpFiles(session, ".", TARGET_PATH, "assets")
 		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
 	}

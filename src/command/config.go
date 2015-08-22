@@ -1,7 +1,7 @@
 package command
 
 const (
-	DEFAULT_TMPL    = "https://github.com/tyrchen/podgen-basic" // SDF
+	DEFAULT_TMPL    = "https://github.com/sctlee/webgen-basic.git"
 	TEMPLATE_PATH   = "template"
 	GH_PAGES        = "gh-pages"
 	TARGET_PATH     = "build"

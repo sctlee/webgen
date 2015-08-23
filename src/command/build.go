@@ -6,11 +6,12 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
+	"runtime"
 
 	"github.com/codeskyblue/go-sh"
 )
 
-type Channel struct {
+type Info struct {
 	Title       string
 	Link        string
 	Description string
@@ -26,15 +27,20 @@ type Channel struct {
 }
 
 type Paper struct {
+	Image       string
+	Author      string
 	Title       string
 	Description string
 	Link        string
+	PubDate     string
+	Tag         string
 }
 
 type WebTemplate struct {
-	Info    Channel
+	Info    Info
 	Home    string
 	Current Paper
+	Papers  []Paper
 }
 
 func Build() {
@@ -46,10 +52,10 @@ func Build() {
 		}
 	}
 
-	channel := getChannel("channel.yml")
-	items := getItems("myitems.yml")
+	info := getInfo("info.yml")
+	items := getItems("papers.yml")
 
-	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "myindex.tmpl"))
+	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "index.tmpl"))
 	check(err)
 
 	f, err := os.Create(fmt.Sprintf("%s/%s", TARGET_PATH, "index.html"))
@@ -58,24 +64,28 @@ func Build() {
 	funcs := template.FuncMap{"alt": alt, "trunc": truncate}
 	t := template.Must(template.New("website").Funcs(funcs).Parse(string(content[:])))
 	err = t.Execute(f, WebTemplate{
-		Info:    channel,
+		Info:    info,
 		Home:    "#current",
 		Current: items[0],
+		Papers:  items[1:],
 	})
 	check(err)
 
-	session := sh.NewSession()
-	cpFiles(session, ".", TARGET_PATH, "assets")
-	cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
-
+	if runtime.GOOS != "windows" {
+		ls := &LinuxShell{sh.NewSession()}
+		ls.Fcp(".", TARGET_PATH, "assets")
+		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
+		// cpFiles(session, ".", TARGET_PATH, "assets")
+		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+	}
 }
 
-func getChannel(path string) (channel Channel) {
+func getInfo(path string) (info Info) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = yaml.Unmarshal(data, &channel)
+	err = yaml.Unmarshal(data, &info)
 	if err != nil {
 		fmt.Println(err)
 	}

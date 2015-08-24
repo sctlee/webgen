@@ -73,7 +73,19 @@ func Build() {
 
 	if runtime.GOOS != "windows" {
 		ls := &LinuxShell{sh.NewSession()}
+		ls.Dmk(fmt.Sprintf("%s/%s", TARGET_PATH, "papers"))
+		for i, item := range items {
+			content_paper, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "paper.tmpl"))
+			check(err)
+
+			f_paper, err := os.Create(fmt.Sprintf("%s/%s/%s", TARGET_PATH, "papers", fmt.Sprintf("%d.html", i+1)))
+			check(err)
+
+			t_paper := template.Must(template.New("paper").Parse(string(content_paper[:])))
+			err = t_paper.Execute(f_paper, item)
+		}
 		ls.Fcp(".", TARGET_PATH, "assets")
+		// ls.Fcp(".", TARGET_PATH, PSRC_PATH)
 		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 		// cpFiles(session, ".", TARGET_PATH, "assets")
 		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")

@@ -7,10 +7,13 @@ import (
 )
 
 type Shell interface {
-	Frm(files ...string)
+	Fmk(files ...string)
+	Frm(src string, files ...string)
 	Fmv(src string, dest string, files ...string)
 	Fcp(src string, dest string, files ...string)
+	Dmk(path string)
 	Gmt(branch string, message string, setUpstream bool)
+	Gcl(url string, path string)
 }
 
 type LinuxShell struct {
@@ -18,6 +21,12 @@ type LinuxShell struct {
 }
 
 type WindowsShell struct{}
+
+func (ls *LinuxShell) Fmk(files ...string) {
+	for _, file := range files {
+		ls.session.Command("touch", file)
+	}
+}
 
 func (ls *LinuxShell) Frm(src string, files ...string) {
 	for _, filename := range files {
@@ -37,6 +46,10 @@ func (ls *LinuxShell) Fcp(src string, dest string, files ...string) {
 	}
 }
 
+func (ls *LinuxShell) Dmk(path string) {
+	ls.session.Command("mkdir", "-p", path).Run()
+}
+
 func (ls *LinuxShell) Gmt(branch string, message string, setUpstream bool) {
 	ls.session.Command("git", "add", ".").Run()
 	ls.session.Command("git", "commit", "-a", "-m", message).Run()
@@ -45,4 +58,8 @@ func (ls *LinuxShell) Gmt(branch string, message string, setUpstream bool) {
 	} else {
 		ls.session.Command("git", "push", "origin", branch).Run()
 	}
+}
+
+func (ls *LinuxShell) Gcl(url string, path string) {
+	ls.session.Command("git", "clone", "--depth=1", url, path).Run()
 }

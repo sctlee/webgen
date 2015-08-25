@@ -30,23 +30,25 @@ func Init() {
 }
 
 func getTemplate() {
+	var shell Shell
+
 	if runtime.GOOS != "windows" {
-		ls := &LinuxShell{sh.NewSession()}
-		ls.session.Command("git", "clone", "--depth=1", DEFAULT_TMPL, TEMPLATE_PATH).Run()
-		ls.Fmv(TEMPLATE_PATH, ".", "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
-		ls.Frm(TEMPLATE_PATH, ".git")
-		ls.Gmt("master", "git init", true)
-		// rmFiles(session, ".git")
-		// mvFiles(session, "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
-		// gitCommit(session, "master", "git init", true)
+		shell = &LinuxShell{sh.NewSession()}
 	}
+	shell.Gcl(DEFAULT_TMPL, TEMPLATE_PATH)
+	shell.Fmv(TEMPLATE_PATH, ".", "info.yml", "papers.yml", ASSETS_PATH, ".gitignore", "CNAME")
+	shell.Dmk(PSRC_PATH)
+	shell.Frm(TEMPLATE_PATH, ".git")
+	shell.Gmt("master", "git init", true)
+	// rmFiles(session, ".git")
+	// mvFiles(session, "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
+	// gitCommit(session, "master", "git init", true)
 }
 
 func createGHPages() {
 	originUrl := getOriginUrl()
 	if runtime.GOOS != "windows" {
 		ls := &LinuxShell{sh.NewSession()}
-		ls.session.Command("git", "branch", "-D", GH_PAGES).Run()
 		ls.session.Command("git", "checkout", "--orphan", GH_PAGES).Run()
 		ls.session.Command("git", "rm", "-rf", ".").Run()
 		ls.session.Command("touch", "index.html").Run()

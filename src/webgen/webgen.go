@@ -23,6 +23,8 @@ func main() {
 		command.Build()
 	case "push":
 		command.Push()
+	case "reset":
+		command.Reset()
 	default:
 		fmt.Println("Usage")
 	}

@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime"
 
+	"utils"
+
 	"github.com/codeskyblue/go-sh"
 )
 
@@ -46,38 +48,54 @@ type WebTemplate struct {
 func Build() {
 	fmt.Println("start build")
 
-	check := func(err error) {
-		if err != nil {
-			fmt.Println(err)
-		}
+	// Init environment shell
+	var shell Shell
+	if runtime.GOOS != "windows" {
+		shell = &LinuxShell{sh.NewSession()}
 	}
 
+	// get user's data
 	info := getInfo("info.yml")
 	items := getItems("papers.yml")
 
-	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "index.tmpl"))
-	check(err)
-
-	f, err := os.Create(fmt.Sprintf("%s/%s", TARGET_PATH, "index.html"))
-	check(err)
-
+	// get index template
+	content_index, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "index.tmpl"))
+	utils.Check(err)
 	funcs := template.FuncMap{"alt": alt, "trunc": truncate}
-	t := template.Must(template.New("website").Funcs(funcs).Parse(string(content[:])))
-	err = t.Execute(f, WebTemplate{
+	t_index := template.Must(template.New("website").Funcs(funcs).Parse(string(content_index[:])))
+
+	// get single papar template
+	content_paper, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "paper.tmpl"))
+	utils.Check(err)
+	t_paper := template.Must(template.New("paper").Parse(string(content_paper[:])))
+
+	// generate paper single html
+	shell.Dmk(fmt.Sprintf("%s/%s", TARGET_PATH, "papers"))
+	for i, item := range items {
+		f_paper, err := os.Create(fmt.Sprintf("%s/%s/%s", TARGET_PATH, "papers", fmt.Sprintf("%d.html", i+1)))
+		utils.Check(err)
+
+		content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", PSRC_PATH, item.Link))
+		utils.Check(err)
+		items[i].Link = f_paper.Name()
+		err = t_paper.Execute(f_paper, string(content[:]))
+		utils.Check(err)
+	}
+
+	// generate index html
+	f_index, err := os.Create(fmt.Sprintf("%s/%s", TARGET_PATH, "index.html"))
+	utils.Check(err)
+	err = t_index.Execute(f_index, WebTemplate{
 		Info:    info,
 		Home:    "#current",
 		Current: items[0],
 		Papers:  items[1:],
 	})
-	check(err)
+	utils.Check(err)
 
-	if runtime.GOOS != "windows" {
-		ls := &LinuxShell{sh.NewSession()}
-		ls.Fcp(".", TARGET_PATH, "assets")
-		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
-		// cpFiles(session, ".", TARGET_PATH, "assets")
-		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
-	}
+	// update resource files
+	shell.Fcp(".", TARGET_PATH, "assets")
+	shell.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 }
 
 func getInfo(path string) (info Info) {

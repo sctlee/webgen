@@ -19,78 +19,51 @@ func Init() {
 	// help init
 	fmt.Println("start init")
 
+	checkFiles()
+	getTemplate()
+	createGHPages()
+}
+
+// check if the dir has been inited
+func checkFiles() {
 	for _, filename := range FILES_TO_CHECK {
 		if utils.Exists(filename) {
 			fmt.Println("has already inited")
 			os.Exit(-1)
 		}
 	}
-	getTemplate()
-	createGHPages()
 }
 
+// get templete from DEFAULT_TMPL
 func getTemplate() {
 	var shell Shell
 
 	if runtime.GOOS != "windows" {
 		shell = &LinuxShell{sh.NewSession()}
 	}
-	shell.Gcl(DEFAULT_TMPL, TEMPLATE_PATH)
+	shell.Gcl(DEFAULT_TMPL, "master", TEMPLATE_PATH, 1)
 	shell.Fmv(TEMPLATE_PATH, ".", "info.yml", "papers.yml", ASSETS_PATH, ".gitignore", "CNAME")
 	shell.Dmk(PSRC_PATH)
 	shell.Frm(TEMPLATE_PATH, ".git")
 	shell.Gmt("master", "git init", true)
-	// rmFiles(session, ".git")
-	// mvFiles(session, "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
-	// gitCommit(session, "master", "git init", true)
 }
 
+// create initial gh-pages which contains only one index.html
 func createGHPages() {
+	var shell Shell
 	originUrl := getOriginUrl()
 	if runtime.GOOS != "windows" {
-		ls := &LinuxShell{sh.NewSession()}
-		ls.session.Command("git", "checkout", "--orphan", GH_PAGES).Run()
-		ls.session.Command("git", "rm", "-rf", ".").Run()
-		ls.session.Command("touch", "index.html").Run()
-
-		ls.Gmt("gh-pages", "web init", true)
-		// gitCommit(session, "gh-pages", "web init", true)
-
-		ls.session.Command("git", "checkout", "master").Run()
-
-		ls.session.Command("git", "clone", "-b", GH_PAGES, originUrl, "build").Run()
-
-		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
-		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+		shell = &LinuxShell{sh.NewSession()}
 	}
-}
 
-func rmFiles(session *sh.Session, files ...string) {
-	for _, filename := range files {
-		session.Command("rm", "-rf", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename)).Run()
-	}
-}
+	shell.Gck(GH_PAGES, true)
+	shell.Gclear()
+	shell.Fmk("index.html")
+	shell.Gmt("gh-pages", "web init", true)
 
-func mvFiles(session *sh.Session, files ...string) {
-	for _, filename := range files {
-		session.Command("mv", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename), ".").Run()
-	}
-}
-
-func cpFiles(session *sh.Session, src string, dest string, files ...string) {
-	for _, filename := range files {
-		session.Command("cp", "-r", fmt.Sprintf("%s/%s", src, filename), dest).Run()
-	}
-}
-
-func gitCommit(session *sh.Session, branch string, message string, setUpstream bool) {
-	session.Command("git", "add", ".").Run()
-	session.Command("git", "commit", "-a", "-m", message).Run()
-	if setUpstream {
-		session.Command("git", "push", "-u", "origin", branch).Run()
-	} else {
-		session.Command("git", "push", "origin", branch).Run()
-	}
+	shell.Gck("master", false)
+	shell.Gcl(originUrl, GH_PAGES, "build", -1)
+	shell.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 }
 
 func getOriginUrl() string {

@@ -77,7 +77,8 @@ func Build() {
 
 		content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", PSRC_PATH, item.Link))
 		utils.Check(err)
-		items[i].Link = f_paper.Name()
+		fn, _ := f_paper.Stat()
+		items[i].Link = fn.Name()
 		err = t_paper.Execute(f_paper, string(content[:]))
 		utils.Check(err)
 	}

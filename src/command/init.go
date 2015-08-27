@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	FILES_TO_CHECK = []string{"channel.yml", "item.yml", "build",
+	FILES_TO_CHECK = []string{"info.yml", "papers.yml", "build",
 		ASSETS_PATH, TEMPLATE_PATH}
-	FILES_TO_CREATE = []string{"channel.yml", "item.yml", ".gitignore", "CNAME"}
+	FILES_TO_CREATE = []string{"info.yml", "papers.yml", ".gitignore", "CNAME"}
 )
 
 func Init() {
@@ -48,7 +48,9 @@ func getTemplate() {
 	gitignore.WriteString(fmt.Sprintf("%s\n%s", TARGET_PATH, PAPER_SRC_PATH))
 
 	for _, filename := range FILES_TO_CREATE {
-		os.Create(filename)
+		if !utils.Exists(filename) {
+			os.Create(filename)
+		}
 	}
 
 	shell.Dmk(PAPER_SRC_PATH)

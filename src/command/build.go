@@ -35,13 +35,15 @@ type Paper struct {
 	Description string
 	Link        string
 	PubDate     string
-	Tag         string
 }
 
 type WebTemplate struct {
 	Info    Info
 	Home    string
 	Current Paper
+	Content string
+	Prev    int
+	Next    int
 	Papers  []Paper
 }
 
@@ -84,7 +86,11 @@ func Build() {
 		utils.Check(err)
 		fn, _ := f_paper.Stat()
 		items[i].Link = fn.Name()
-		err = t_paper.Execute(f_paper, string(content[:]))
+		err = t_paper.Execute(f_paper, WebTemplate{
+			Info:    info,
+			Current: items[0],
+			Content: string(content[:]),
+		})
 		utils.Check(err)
 	}
 
@@ -93,7 +99,6 @@ func Build() {
 	utils.Check(err)
 	err = t_index.Execute(f_index, WebTemplate{
 		Info:    info,
-		Home:    "#current",
 		Current: items[0],
 		Papers:  items[1:],
 	})

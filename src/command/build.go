@@ -54,28 +54,33 @@ func Build() {
 		shell = &LinuxShell{sh.NewSession()}
 	}
 
+	// update resource files
+	shell.Fcp(".", TARGET_PATH, ASSETS_PATH)
+	shell.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
+
+	// generate real content
 	// get user's data
 	info := getInfo("info.yml")
 	items := getItems("papers.yml")
 
 	// get index template
-	content_index, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "index.tmpl"))
+	content_index, err := ioutil.ReadFile(TEMPLATE_INDEX_FILE)
 	utils.Check(err)
 	funcs := template.FuncMap{"alt": alt, "trunc": truncate}
 	t_index := template.Must(template.New("website").Funcs(funcs).Parse(string(content_index[:])))
 
 	// get single papar template
-	content_paper, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", TEMPLATE_PATH, "paper.tmpl"))
+	content_paper, err := ioutil.ReadFile(TEMPLATE_PAPER_FILE)
 	utils.Check(err)
 	t_paper := template.Must(template.New("paper").Parse(string(content_paper[:])))
 
 	// generate paper single html
-	shell.Dmk(fmt.Sprintf("%s/%s", TARGET_PATH, "papers"))
+	shell.Dmk(PAPER_TARGET_PATH)
 	for i, item := range items {
-		f_paper, err := os.Create(fmt.Sprintf("%s/%s/%s", TARGET_PATH, "papers", fmt.Sprintf("%d.html", i+1)))
+		f_paper, err := os.Create(fmt.Sprintf("%s/%s", PAPER_TARGET_PATH, fmt.Sprintf("%d.html", i+1)))
 		utils.Check(err)
 
-		content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", PSRC_PATH, item.Link))
+		content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", PAPER_SRC_PATH, item.Link))
 		utils.Check(err)
 		fn, _ := f_paper.Stat()
 		items[i].Link = fn.Name()
@@ -94,9 +99,6 @@ func Build() {
 	})
 	utils.Check(err)
 
-	// update resource files
-	shell.Fcp(".", TARGET_PATH, "assets")
-	shell.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 }
 
 func getInfo(path string) (info Info) {

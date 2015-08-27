@@ -13,25 +13,22 @@ import (
 var (
 	FILES_TO_CHECK = []string{"channel.yml", "item.yml", "build",
 		ASSETS_PATH, TEMPLATE_PATH}
+	FILES_TO_CREATE = []string{"channel.yml", "item.yml", ".gitignore", "CNAME"}
 )
 
 func Init() {
 	// help init
 	fmt.Println("start init")
 
-	checkFiles()
-	getTemplate()
-	createGHPages()
-}
-
-// check if the dir has been inited
-func checkFiles() {
 	for _, filename := range FILES_TO_CHECK {
 		if utils.Exists(filename) {
-			fmt.Println("has already inited")
+			fmt.Println("has already inited. Please run 'reset' first")
 			os.Exit(-1)
 		}
 	}
+
+	getTemplate()
+	createGHPages()
 }
 
 // get templete from DEFAULT_TMPL
@@ -42,8 +39,19 @@ func getTemplate() {
 		shell = &LinuxShell{sh.NewSession()}
 	}
 	shell.Gcl(DEFAULT_TMPL, "master", TEMPLATE_PATH, 1)
+
+	// create resource files and .gitignore CNAME
 	shell.Fmv(TEMPLATE_PATH, ".", "info.yml", "papers.yml", ASSETS_PATH, ".gitignore", "CNAME")
-	shell.Dmk(PSRC_PATH)
+
+	// init gitignore file
+	gitignore, _ := os.Create(".gitignore")
+	gitignore.WriteString(fmt.Sprintf("%s\n%s", TARGET_PATH, PAPER_SRC_PATH))
+
+	for _, filename := range FILES_TO_CREATE {
+		os.Create(filename)
+	}
+
+	shell.Dmk(PAPER_SRC_PATH)
 	shell.Frm(TEMPLATE_PATH, ".git")
 	shell.Gmt("master", "git init", true)
 }

@@ -30,14 +30,19 @@ func main() {
 	// default:
 	// 	fmt.Println("Usage")
 	// }
+	var template_repo string
+	var has_parser bool
 	var cmdInit = &cobra.Command{
 		Use:   "init",
 		Short: "init",
 		Long:  `init`,
 		Run: func(cmd *cobra.Command, args []string) {
-			command.Init()
+			command.Init(template_repo, has_parser)
 		},
 	}
+
+	cmdInit.Flags().StringVarP(&template_repo, "template", "t", command.DEFAULT_TMPL, "Choose one template")
+	cmdInit.Flags().BoolVarP(&has_parser, "parser", "p", false, "if you want to have a simple tool to edit paper, set true")
 
 	var cmdBuild = &cobra.Command{
 		Use:   "build",

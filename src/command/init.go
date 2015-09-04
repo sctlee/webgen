@@ -11,12 +11,14 @@ import (
 )
 
 var (
+	template_repo  string
+	has_parser     bool
 	FILES_TO_CHECK = []string{"info.yml", "papers.yml", "build",
 		ASSETS_PATH, TEMPLATE_PATH}
 	FILES_TO_CREATE = []string{"info.yml", "papers.yml", ".gitignore", "CNAME"}
 )
 
-func Init() {
+func Init(t string, has_p bool) {
 	// help init
 	fmt.Println("start init")
 
@@ -26,9 +28,15 @@ func Init() {
 			os.Exit(-1)
 		}
 	}
+	template_repo = t
+	has_parser = has_p
 
 	getTemplate()
 	createGHPages()
+
+	if has_parser {
+		getParser()
+	}
 }
 
 // get templete from DEFAULT_TMPL
@@ -38,7 +46,7 @@ func getTemplate() {
 	if runtime.GOOS != "windows" {
 		shell = &LinuxShell{sh.NewSession()}
 	}
-	shell.Gcl(DEFAULT_TMPL, "master", TEMPLATE_PATH, 1)
+	shell.Gcl(template_repo, "master", TEMPLATE_PATH, 1)
 
 	// create resource files and .gitignore CNAME
 	shell.Fmv(TEMPLATE_PATH, ".", "info.yml", "papers.yml", ASSETS_PATH, ".gitignore", "CNAME")
@@ -74,6 +82,20 @@ func createGHPages() {
 	shell.Gck("master", false)
 	shell.Gcl(originUrl, GH_PAGES, "build", -1)
 	shell.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
+}
+
+// get parser to parse *.md to *.html
+func getParser() {
+	var shell Shell
+
+	if runtime.GOOS != "windows" {
+		shell = &LinuxShell{sh.NewSession()}
+	}
+	shell.Gcl(DEFAULT_PARSE, "master", PARSER_PATH, -1)
+	gitignore, _ := os.OpenFile(".gitignore", os.O_APPEND, 0666)
+	gitignore.WriteString(fmt.Sprintf("\n%s", PARSER_PATH))
+
+	shell.Frm(PARSER_PATH, ".git")
 }
 
 func getOriginUrl() string {

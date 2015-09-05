@@ -70,10 +70,18 @@ func main() {
 			command.Reset()
 		},
 	}
-	// cmdHaha.Flags().IntVarP(&t, "type", "t", 1, "type hahaha")
+
+	var cmdNew = &cobra.Command{
+		Use:   "new",
+		Short: "new",
+		Long:  `new`,
+		Run: func(cmd *cobra.Command, args []string) {
+			command.New()
+		},
+	}
 
 	var rootCmd = &cobra.Command{Use: "webgen"}
-	rootCmd.AddCommand(cmdInit, cmdBuild, cmdPush, cmdReset)
+	rootCmd.AddCommand(cmdInit, cmdBuild, cmdPush, cmdReset, cmdNew)
 	rootCmd.Execute()
 
 }

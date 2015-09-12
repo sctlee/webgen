@@ -7,5 +7,7 @@ now paper can be viewed in details, although style is ugly
 
 # Usage
 webgen init
+
 webgen build
+
 webgen push

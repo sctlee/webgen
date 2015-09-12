@@ -6,8 +6,8 @@ welcome to use my material design template webgen-basic!
 now paper can be viewed in details, although style is ugly
 
 # Usage
-webgen init
+`webgen init`
 
-webgen build
+`webgen build`
 
-webgen push
+`webgen push`

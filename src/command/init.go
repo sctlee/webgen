@@ -11,86 +11,91 @@ import (
 )
 
 var (
-	FILES_TO_CHECK = []string{"channel.yml", "item.yml", "build",
+	template_repo  string
+	has_parser     bool
+	FILES_TO_CHECK = []string{"info.yml", "papers.yml", "build",
 		ASSETS_PATH, TEMPLATE_PATH}
+	FILES_TO_CREATE = []string{"info.yml", "papers.yml", ".gitignore", "CNAME"}
 )
 
-func Init() {
+func Init(t string, has_p bool) {
 	// help init
 	fmt.Println("start init")
 
 	for _, filename := range FILES_TO_CHECK {
 		if utils.Exists(filename) {
-			fmt.Println("has already inited")
+			fmt.Println("has already inited. Please run 'reset' first")
 			os.Exit(-1)
 		}
 	}
+	template_repo = t
+	has_parser = has_p
+
 	getTemplate()
 	createGHPages()
+
+	if has_parser {
+		getParser()
+	}
 }
 
+// get templete from DEFAULT_TMPL
 func getTemplate() {
 	var shell Shell
 
 	if runtime.GOOS != "windows" {
 		shell = &LinuxShell{sh.NewSession()}
 	}
-	shell.Gcl(DEFAULT_TMPL, TEMPLATE_PATH)
+	shell.Gcl(template_repo, "master", TEMPLATE_PATH, 1)
+
+	// create resource files and .gitignore CNAME
 	shell.Fmv(TEMPLATE_PATH, ".", "info.yml", "papers.yml", ASSETS_PATH, ".gitignore", "CNAME")
-	shell.Dmk(PSRC_PATH)
+
+	// init gitignore file
+	gitignore, _ := os.Create(".gitignore")
+	gitignore.WriteString(fmt.Sprintf("%s\n%s", TARGET_PATH, PAPER_SRC_PATH))
+
+	for _, filename := range FILES_TO_CREATE {
+		if !utils.Exists(filename) {
+			os.Create(filename)
+		}
+	}
+
+	shell.Dmk(PAPER_SRC_PATH)
 	shell.Frm(TEMPLATE_PATH, ".git")
 	shell.Gmt("master", "git init", true)
-	// rmFiles(session, ".git")
-	// mvFiles(session, "channel.yml", "items.yml", ASSETS_PATH, ".gitignore", "CNAME")
-	// gitCommit(session, "master", "git init", true)
 }
 
+// create initial gh-pages which contains only one index.html
 func createGHPages() {
+	var shell Shell
 	originUrl := getOriginUrl()
 	if runtime.GOOS != "windows" {
-		ls := &LinuxShell{sh.NewSession()}
-		ls.session.Command("git", "checkout", "--orphan", GH_PAGES).Run()
-		ls.session.Command("git", "rm", "-rf", ".").Run()
-		ls.session.Command("touch", "index.html").Run()
-
-		ls.Gmt("gh-pages", "web init", true)
-		// gitCommit(session, "gh-pages", "web init", true)
-
-		ls.session.Command("git", "checkout", "master").Run()
-
-		ls.session.Command("git", "clone", "-b", GH_PAGES, originUrl, "build").Run()
-
-		ls.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
-		// cpFiles(session, TEMPLATE_PATH, TARGET_PATH, "css", "font-awesome", "fonts", "img", "js")
+		shell = &LinuxShell{sh.NewSession()}
 	}
+
+	shell.Gck(GH_PAGES, true)
+	shell.Gclear()
+	shell.Fmk("index.html")
+	shell.Gmt("gh-pages", "web init", true)
+
+	shell.Gck("master", false)
+	shell.Gcl(originUrl, GH_PAGES, "build", -1)
+	shell.Fcp(TEMPLATE_PATH, TARGET_PATH, "css", "fonts", "img", "js")
 }
 
-func rmFiles(session *sh.Session, files ...string) {
-	for _, filename := range files {
-		session.Command("rm", "-rf", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename)).Run()
-	}
-}
+// get parser to parse *.md to *.html
+func getParser() {
+	var shell Shell
 
-func mvFiles(session *sh.Session, files ...string) {
-	for _, filename := range files {
-		session.Command("mv", fmt.Sprintf("%s/%s", TEMPLATE_PATH, filename), ".").Run()
+	if runtime.GOOS != "windows" {
+		shell = &LinuxShell{sh.NewSession()}
 	}
-}
+	shell.Gcl(DEFAULT_PARSE, "master", PARSER_PATH, -1)
+	gitignore, _ := os.OpenFile(".gitignore", os.O_APPEND, 0666)
+	gitignore.WriteString(fmt.Sprintf("\n%s", PARSER_PATH))
 
-func cpFiles(session *sh.Session, src string, dest string, files ...string) {
-	for _, filename := range files {
-		session.Command("cp", "-r", fmt.Sprintf("%s/%s", src, filename), dest).Run()
-	}
-}
-
-func gitCommit(session *sh.Session, branch string, message string, setUpstream bool) {
-	session.Command("git", "add", ".").Run()
-	session.Command("git", "commit", "-a", "-m", message).Run()
-	if setUpstream {
-		session.Command("git", "push", "-u", "origin", branch).Run()
-	} else {
-		session.Command("git", "push", "origin", branch).Run()
-	}
+	shell.Frm(PARSER_PATH, ".git")
 }
 
 func getOriginUrl() string {

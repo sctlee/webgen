@@ -9,10 +9,13 @@ import (
 
 func Push() {
 	fmt.Println("start push")
+
+	var shell Shell
 	if runtime.GOOS != "windows" {
-		ls := &LinuxShell{sh.NewSession()}
-		ls.Gmt("master", "new feature", true)
-		ls.session.SetDir("./build")
-		ls.Gmt("gh-pages", "new feature", true)
+		shell = &LinuxShell{sh.NewSession()}
 	}
+
+	shell.Gmt("master", "new feature", true)
+	shell.Dcd("./build")
+	shell.Gmt("gh-pages", "new feature", true)
 }

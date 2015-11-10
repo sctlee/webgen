@@ -19,7 +19,7 @@ func Exists(path string) bool {
 
 func Open(path string) ([]byte, int) {
 	// Usage:
-	// data, count := openFile("channel.yml")
+	// data, count := openFile("info.yml")
 	// fmt.Printf("read %d bytes: %q\n", count, data[:count])
 	file, err := os.Open(path) // For read access.
 	if err != nil {
